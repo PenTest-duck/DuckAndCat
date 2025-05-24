@@ -9,11 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      languages: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          levels: string[]
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          levels: string[]
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          levels?: string[]
+          name?: string
+        }
+        Relationships: []
+      }
+      roleplay_runs: {
+        Row: {
+          created_at: string
+          id: string
+          roleplay_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          roleplay_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          roleplay_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roleplay_runs_roleplay_id_fkey"
+            columns: ["roleplay_id"]
+            isOneToOne: false
+            referencedRelation: "roleplays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roleplays: {
         Row: {
           code: string | null
           created_at: string
+          first_prompt: string | null
           id: string
+          image_path: string | null
           name: string
           owner_id: string
           scenario: string
@@ -21,7 +73,9 @@ export type Database = {
         Insert: {
           code?: string | null
           created_at?: string
+          first_prompt?: string | null
           id?: string
+          image_path?: string | null
           name: string
           owner_id: string
           scenario: string
@@ -29,7 +83,9 @@ export type Database = {
         Update: {
           code?: string | null
           created_at?: string
+          first_prompt?: string | null
           id?: string
+          image_path?: string | null
           name?: string
           owner_id?: string
           scenario?: string
@@ -40,19 +96,27 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          language: Database["public"]["Enums"]["language"]
+          language_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          language?: Database["public"]["Enums"]["language"]
+          language_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          language?: Database["public"]["Enums"]["language"]
+          language_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "teachers_language_id_fkey"
+            columns: ["language_id"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -62,7 +126,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      language: "EN" | "ZH" | "JA" | "KO"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -177,8 +241,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      language: ["EN", "ZH", "JA", "KO"],
-    },
+    Enums: {},
   },
 } as const

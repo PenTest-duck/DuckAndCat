@@ -15,7 +15,7 @@ interface RoleplayCardProps {
 
 export function RoleplayCard({ roleplay }: RoleplayCardProps) {
   const copyLink = () => {
-    const link = `${window.location.origin}/roleplay/${roleplay.code}`;
+    const link = `${window.location.origin}/students/roleplay/${roleplay.code}`;
     navigator.clipboard.writeText(link);
     toast.success("Link copied to clipboard!");
   };

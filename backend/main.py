@@ -9,8 +9,18 @@ from google.genai import types
 from supabase import create_client, Client
 from PIL import Image
 import os
+import re
 from uuid import uuid4
 from dotenv import load_dotenv
+from logging import getLogger, basicConfig, INFO
+
+# Configure logging
+basicConfig(
+    level=INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = getLogger(__name__)
+
 load_dotenv()
 
 GEMINI_MODEL = "gemini-2.5-flash-preview-04-17"
@@ -69,6 +79,7 @@ The description of the scenario is:
 
 1. Generate the first line of speech the AI roleplay character would say to kick the roleplay off. Write in {request.language}.
 This must be a single question. Do not include any other text. Do not use markdown. Keep it short. It must be written in {request.language}.
+Surround it with <question> and </question> tags.
 
 2. Generate an image of the roleplay scenario. This will serve as the background for the roleplay.
         """),
@@ -81,7 +92,12 @@ This must be a single question. Do not include any other text. Do not use markdo
     image_id = None
     for part in response.candidates[0].content.parts:
         if part.text is not None:
-            first_prompt = part.text
+            # Extract text between <question> tags
+            match = re.search(r"<question>(.*?)</question>", part.text)
+            if match:
+                first_prompt = match.group(1)
+            else:
+                first_prompt = part.text
         elif part.inline_data is not None:
             image = Image.open(BytesIO((part.inline_data.data)))
             image_id = str(uuid4())
@@ -94,9 +110,24 @@ This must be a single question. Do not include any other text. Do not use markdo
     image.save(img_byte_arr, format='PNG')
     img_byte_arr = img_byte_arr.getvalue()
     
-    response = supabase.storage.from_("roleplay").upload(f"roleplay/{request.teacher_id}/images/{image_id}.png", img_byte_arr)
+    response = supabase.storage.from_("roleplay").upload(f"{request.teacher_id}/previews/{image_id}.png", img_byte_arr)
+    logger.info(f"Uploaded image to {response.path}")
 
     return {
         "first_prompt": first_prompt,
-        "image_url": response.full_path,
+        "image_path": response.path,
     }
+
+@app.delete("/api/v1/roleplay/deletePreviews")
+def delete_roleplay_previews(teacher_id: str):
+    try:
+        # List all files in the previews folder for the teacher
+        previews = supabase.storage.from_("roleplay").list(f"{teacher_id}/previews")
+        
+        # Delete each preview file
+        for preview in previews:
+            supabase.storage.from_("roleplay").remove([f"{teacher_id}/previews/{preview['name']}"])
+        
+        return {"message": "All previews deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete previews: {str(e)}")

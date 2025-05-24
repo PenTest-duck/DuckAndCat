@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Toaster } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { TeacherProvider } from "@/contexts/TeacherContext";
 
 export default function TeachersPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -51,18 +52,20 @@ export default function TeachersPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar user={user} />
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto py-8 px-4">
-          <Toaster />
-          <TeacherOnboardingDialog 
-            open={showOnboarding} 
-            onComplete={() => setShowOnboarding(false)} 
-          />
-          <RoleplayList />
-        </div>
-      </main>
-    </div>
+    <TeacherProvider user={user}>
+      <div className="flex h-screen">
+        <Sidebar user={user} />
+        <main className="flex-1 overflow-auto">
+          <div className="container mx-auto py-8 px-4">
+            <Toaster />
+            <TeacherOnboardingDialog 
+              open={showOnboarding} 
+              onComplete={() => setShowOnboarding(false)} 
+            />
+            <RoleplayList />
+          </div>
+        </main>
+      </div>
+    </TeacherProvider>
   );
 } 

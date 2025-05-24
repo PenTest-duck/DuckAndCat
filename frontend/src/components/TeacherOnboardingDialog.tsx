@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { Database } from "@/utils/supabase/database.types";
-
-type Language = Database["public"]["Enums"]["language"];
+import { Language } from "@/utils/types";
 
 interface TeacherOnboardingDialogProps {
   open: boolean;
@@ -16,10 +14,42 @@ interface TeacherOnboardingDialogProps {
 }
 
 export function TeacherOnboardingDialog({ open, onComplete }: TeacherOnboardingDialogProps) {
-  const [language, setLanguage] = useState<Language>("EN");
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [selectedLanguageId, setSelectedLanguageId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("languages")
+          .select("*");
+
+        if (error) throw error;
+        if (data) {
+          setLanguages(data);
+          // Set default language to English if available
+          const english = data.find(lang => lang.code === "EN");
+          if (english) {
+            setSelectedLanguageId(english.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching languages:", error);
+        toast.error("Failed to load languages");
+      }
+    };
+
+    fetchLanguages();
+  }, []);
+
   const handleSubmit = async () => {
+    if (!selectedLanguageId) {
+      toast.error("Please select a language");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -35,7 +65,7 @@ export function TeacherOnboardingDialog({ open, onComplete }: TeacherOnboardingD
         .insert([
           {
             id: user.id,
-            language,
+            language_id: selectedLanguageId,
           },
         ]);
 
@@ -60,22 +90,23 @@ export function TeacherOnboardingDialog({ open, onComplete }: TeacherOnboardingD
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Select your preferred language</label>
-            <Select value={language} onValueChange={(value: Language) => setLanguage(value)}>
+            <Select value={selectedLanguageId} onValueChange={setSelectedLanguageId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a language" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="EN">English</SelectItem>
-                <SelectItem value="ZH">Chinese</SelectItem>
-                <SelectItem value="JA">Japanese</SelectItem>
-                <SelectItem value="KO">Korean</SelectItem>
+                {languages.map((lang) => (
+                  <SelectItem key={lang.id} value={lang.id}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <Button 
             className="w-full" 
             onClick={handleSubmit}
-            disabled={isLoading}
+            disabled={isLoading || !selectedLanguageId}
           >
             {isLoading ? "Saving..." : "Get Started"}
           </Button>

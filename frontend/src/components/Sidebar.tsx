@@ -30,11 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Database } from "@/utils/supabase/database.types";
 import { User } from "@supabase/supabase-js";
 import Image from "next/image";
-
-type Language = Database["public"]["Enums"]["language"];
+import { useTeacher } from "@/contexts/TeacherContext";
+import { Language } from "@/utils/types";
 
 interface SidebarProps {
   user: User | null;
@@ -43,32 +42,29 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
-  const [language, setLanguage] = useState<Language>("EN");
-  const [isLoading, setIsLoading] = useState(false);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const { language, setLanguage, isLoading } = useTeacher();
 
   useEffect(() => {
-    if (user) {
-      fetchTeacherLanguage();
-    }
-  }, [user]);
+    const fetchLanguages = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("languages")
+          .select("*");
 
-  const fetchTeacherLanguage = async () => {
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("teachers")
-        .select("language")
-        .eq("id", user?.id)
-        .single();
-
-      if (error) throw error;
-      if (data?.language) {
-        setLanguage(data.language);
+        if (error) throw error;
+        if (data) {
+          setLanguages(data);
+        }
+      } catch (error) {
+        console.error("Error fetching languages:", error);
+        toast.error("Failed to load languages");
       }
-    } catch (error) {
-      console.error("Error fetching teacher language:", error);
-    }
-  };
+    };
+
+    fetchLanguages();
+  }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -76,24 +72,17 @@ export function Sidebar({ user }: SidebarProps) {
     router.push("/");
   };
 
-  const handleLanguageChange = async (newLanguage: Language) => {
-    setIsLoading(true);
+  const handleLanguageChange = async (newLanguageId: string) => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("teachers")
-        .update({ language: newLanguage })
-        .eq("id", user?.id);
-
-      if (error) throw error;
-
-      setLanguage(newLanguage);
+      const selectedLanguage = languages.find(lang => lang.id === newLanguageId);
+      if (!selectedLanguage) {
+        throw new Error("Selected language not found");
+      }
+      await setLanguage(selectedLanguage);
       toast.success("Language updated successfully!");
     } catch (error) {
       toast.error("Failed to update language");
       console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -130,27 +119,21 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="p-4 border-t">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
-                  {user?.user_metadata?.avatar_url && (
-                    <Image
-                      src={user.user_metadata.avatar_url}
-                      width={32}
-                      height={32}
-                      alt={user.user_metadata.full_name || "User"}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <span className="text-sm font-medium">
-                  {user?.user_metadata?.full_name || "User"}
-                </span>
-              </div>
+            <Button variant="ghost" className="w-full justify-start gap-2">
+              <Image
+                src={user?.user_metadata?.avatar_url || "/default-avatar.png"}
+                alt="User avatar"
+                width={24}
+                height={24}
+                className="rounded-full"
+              />
+              <span className="flex-1 text-left truncate">
+                {user?.user_metadata?.full_name || user?.email}
+              </span>
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -159,7 +142,6 @@ export function Sidebar({ user }: SidebarProps) {
         </DropdownMenu>
       </div>
 
-      {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent>
           <DialogHeader>
@@ -169,7 +151,7 @@ export function Sidebar({ user }: SidebarProps) {
             <div className="space-y-2">
               <label className="text-sm font-medium">Language</label>
               <Select
-                value={language}
+                value={language?.id || ""}
                 onValueChange={handleLanguageChange}
                 disabled={isLoading}
               >
@@ -177,10 +159,11 @@ export function Sidebar({ user }: SidebarProps) {
                   <SelectValue placeholder="Select a language" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="EN">English</SelectItem>
-                  <SelectItem value="ZH">Chinese</SelectItem>
-                  <SelectItem value="JA">Japanese</SelectItem>
-                  <SelectItem value="KO">Korean</SelectItem>
+                  {languages.map((lang) => (
+                    <SelectItem key={lang.id} value={lang.id}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
