@@ -11,6 +11,15 @@ import { getStorageUrl } from "@/utils/utils";
 import { useConversation } from "@11labs/react";
 import { Roleplay } from "@/utils/types";
 import Transcript from "@/components/Transcript";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 interface Message {
   role: "user" | "assistant";
@@ -26,6 +35,12 @@ export default function RoleplayPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(true);
   const [isConversationActive, setIsConversationActive] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [speed, setSpeed] = useState(2); // 0: slowest, 1: slow, 2: normal, 3: fast, 4: fastest
+  const [difficulty, setDifficulty] = useState("HSK3"); // Default to HSK3
+  const [isTranscriptVisible, setIsTranscriptVisible] = useState(true);
+
+  const speedLabels = ["Slowest", "Slow", "Normal", "Fast", "Fastest"];
+  const hskLevels = ["HSK1", "HSK2", "HSK3", "HSK4", "HSK5", "HSK6"];
 
   const conversation = useConversation({
     onConnect: () => {
@@ -34,7 +49,7 @@ export default function RoleplayPage() {
     },
     onDisconnect: () => {
       console.log('Disconnected');
-      setIsConversationActive(false);
+      // setIsConversationActive(false);
     },
     onMessage: (message) => {
       console.log('Message:', message);
@@ -67,11 +82,11 @@ export default function RoleplayPage() {
     } catch (error) {
       console.error('Failed to start conversation:', error);
     }
-  }, [conversation]);
+  }, [conversation, speed, difficulty]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
-    setIsConversationActive(false);
+    // setIsConversationActive(false);
   }, [conversation]);
 
   useEffect(() => {
@@ -162,6 +177,45 @@ export default function RoleplayPage() {
               {!isConversationActive ? (
                 <>
                   <p className="text-gray-600 whitespace-pre-wrap">{roleplay.scenario}</p>
+                  
+                  <div className="space-y-6 py-4">
+                    <div className="space-y-2">
+                      <Label>Speaking Speed</Label>
+                      <div className="flex items-center gap-4">
+                        <Slider
+                          value={[speed]}
+                          onValueChange={(value: number[]) => setSpeed(value[0])}
+                          min={0}
+                          max={4}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-gray-500 min-w-[60px]">
+                          {speedLabels[speed]}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Difficulty Level</Label>
+                      <Select
+                        value={difficulty}
+                        onValueChange={setDifficulty}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hskLevels.map((level) => (
+                            <SelectItem key={level} value={level}>
+                              {level}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <Button 
                     className="w-full" 
                     size="lg"
@@ -172,7 +226,11 @@ export default function RoleplayPage() {
                 </>
               ) : (
                 <>
-                  <Transcript messages={messages} />
+                  <Transcript 
+                    messages={messages} 
+                    isVisible={isTranscriptVisible}
+                    onVisibilityChange={setIsTranscriptVisible}
+                  />
                   <Button 
                     className="w-full" 
                     size="lg"

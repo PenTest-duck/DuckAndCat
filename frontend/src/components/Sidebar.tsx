@@ -8,6 +8,10 @@ import {
   Settings, 
   ChevronDown, 
   LogOut,
+  BookText,
+  Gamepad2,
+  MessageSquare,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,7 +95,7 @@ export function Sidebar({ user }: SidebarProps) {
   };
 
   return (
-    <div className="h-screen w-64 bg-gray-50 border-r flex flex-col">
+    <div className="h-screen w-56 bg-gray-50 border-r flex flex-col">
       {/* Navigation */}
       <div className="p-4 space-y-2">
         <Button
@@ -101,6 +105,38 @@ export function Sidebar({ user }: SidebarProps) {
         >
           <BookOpen className="h-5 w-5" />
           Roleplays
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2"
+          onClick={() => toast.info("Coming soon!")}
+        >
+          <BookText className="h-5 w-5" />
+          Vocabulary
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2"
+          onClick={() => toast.info("Coming soon!")}
+        >
+          <Gamepad2 className="h-5 w-5" />
+          Games
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2"
+          onClick={() => toast.info("Coming soon!")}
+        >
+          <MessageSquare className="h-5 w-5" />
+          Sentence Maker
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2"
+          onClick={() => toast.info("Coming soon!")}
+        >
+          <Users className="h-5 w-5" />
+          Students
         </Button>
       </div>
 

@@ -5,14 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { RoleplayCard } from "./RoleplayCard";
 import { CreateRoleplayDialog } from "./CreateRoleplayDialog";
 import { toast } from "sonner";
-
-interface Roleplay {
-  id: string;
-  name: string;
-  scenario: string;
-  code: string | null;
-  created_at: string;
-}
+import { Roleplay } from "@/utils/types";
 
 export function RoleplayList() {
   const [roleplays, setRoleplays] = useState<Roleplay[]>([]);

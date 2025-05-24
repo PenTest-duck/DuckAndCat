@@ -48,6 +48,7 @@ def get_roleplay_description(request: RoleplayDescriptionRequest):
             Include ideas about the setting, storyline, topics covered, and other details that would be helpful for the roleplay.
             This will form a key part of the input to the AI voice agent that will actually perform the roleplay.
             Return the description only. Do not include any other text. Do not use markdown. Use plain text. Do not exceed 100 words.
+            It must be plain sentences. Do not include structure or formatting.
         """)
     )
     return {
@@ -74,7 +75,7 @@ The description of the scenario is:
 This must be a single question. Do not include any other text. Do not use markdown. Keep it short. It must be written in {request.language}.
 Surround it with <question> and </question> tags.
 
-2. Generate an image of the roleplay scenario. This will serve as the background for the roleplay.
+2. Generate an image of the roleplay scenario. This will serve as the background for the roleplay. Realistic photograph.
         """),
         config=types.GenerateContentConfig(
             response_modalities=["TEXT", "IMAGE"],
@@ -139,6 +140,8 @@ def create_roleplay_agent(request: RoleplayAgentRequest):
             voice_id = "4VZIsMPtgggwNg7OXbPY" # James Gao (Chinese)
         case "ja":
             voice_id = "Mv8AjrYZCBkdsmDHNwcB" # Ishibashi (Japanese)
+        case "ko":
+            voice_id = "4JJwo477JUAx3HV0T7n7" # YohanKoo (Korean)
         case _:
             logger.warning(f"No voice found for language code {request.language_code}. Using default voice.")
             pass
