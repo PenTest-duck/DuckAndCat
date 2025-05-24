@@ -60,7 +60,10 @@ export default function TeachersPage() {
             <Toaster />
             <TeacherOnboardingDialog 
               open={showOnboarding} 
-              onComplete={() => setShowOnboarding(false)} 
+              onComplete={() => {
+                setShowOnboarding(false);
+                window.location.reload();
+              }}
             />
             <RoleplayList />
           </div>

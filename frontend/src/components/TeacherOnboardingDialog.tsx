@@ -89,7 +89,7 @@ export function TeacherOnboardingDialog({ open, onComplete }: TeacherOnboardingD
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Select your preferred language</label>
+            <label className="text-sm font-medium">Select your language</label>
             <Select value={selectedLanguageId} onValueChange={setSelectedLanguageId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a language" />
