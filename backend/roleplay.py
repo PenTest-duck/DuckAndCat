@@ -151,7 +151,7 @@ def create_roleplay_agent(request: RoleplayAgentRequest):
         },
         json={
             "name": request.roleplay_name,
-            "tags": ["roleplay"],
+            "tags": ["roleplay", "base"],
             "conversation_config": {
                 "agent": {
                     "first_message": request.first_prompt,
@@ -185,26 +185,50 @@ The scenario is:
         "agent_id": agent_id,
     }
 
-    # response = elevenLabsClient.conversational_ai.agents.create(
-    #     name=request.roleplay_name,
-    #     tags=["roleplay"],
-    #     conversational_config=ConversationalConfig(
-    #         agent=AgentConfig(
-    #             first_message=request.first_prompt,
-    #             language=request.language_code.lower(),
-    #             prompt=PromptAgentDbModel(
-    #                 prompt=dedent(f"""
-    #                     You are a roleplay agent for a language learning roleplay.
-    #                     The roleplay is about {request.roleplay_name}.
-    #                     The scenario is:
-    #                     {request.roleplay_scenario}
-    #                 """),
-    #                 llm="gemini-2.0-flash-001",
-    #                 temperature=0.3,
-    #             ),
-    #         )
-    #     )
-    # )
-    # return {
-    #     "agent_id": response.agent_id,
-    # }
+class RoleplayRunSetupRequest(BaseModel):
+    agent_id: str
+    speed: float
+
+@router.post("/agent/runs")
+def setup_roleplay_run(request: RoleplayRunSetupRequest):
+    response = requests.get(
+        f"https://api.elevenlabs.io/v1/convai/agents/{request.agent_id}",
+        headers={
+            "Xi-Api-Key": os.getenv("ELEVENLABS_API_KEY"),
+        },
+    )
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail=f"Failed to get roleplay agent: {response.json()}")
+    original_agent = response.json()
+    
+    # Edit the agent for this run
+    original_agent["name"] = f"{original_agent['name']} (Run)"
+    original_agent["tags"] = ["roleplay", "run"]
+    original_agent["conversation_config"]["agent"]["speed"] = request.speed
+
+    response = requests.post(
+        "https://api.elevenlabs.io/v1/convai/agents/create",
+        headers={
+            "Xi-Api-Key": os.getenv("ELEVENLABS_API_KEY"),
+        },
+        json=original_agent,
+    )
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail=f"Failed to create roleplay agent run: {response.json()}")
+    
+    run_id = response.json()["agent_id"]
+    return {
+        "run_id": run_id,
+    }
+
+@router.delete("/agent/runs/{run_id}")
+def teardown_roleplay_run(run_id: str):
+    response = requests.delete(
+        f"https://api.elevenlabs.io/v1/convai/agents/{run_id}",
+        headers={
+            "Xi-Api-Key": os.getenv("ELEVENLABS_API_KEY"),
+        },
+    )
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail=f"Failed to delete roleplay agent run: {response.json()}")
+    return {"message": "Roleplay agent run deleted successfully"}
