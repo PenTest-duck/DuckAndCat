@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import {
+  createRoleplayAgent,
   deleteRoleplayPreviews,
   getRoleplayDescription,
   getRoleplayImage,
@@ -57,6 +58,11 @@ export function CreateRoleplayDialog({ onSuccess }: CreateRoleplayDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!language) {
+      toast.error("Please set a language in your settings first");
+      return;
+    }
+
     if (!hasPreviewed) {
       toast.error("Please preview the roleplay before creating");
       return;
@@ -97,6 +103,9 @@ export function CreateRoleplayDialog({ onSuccess }: CreateRoleplayDialogProps) {
         previewData.imagePath = newImagePath;
       }
 
+      const agentResponse = await createRoleplayAgent(name, scenario, language?.code, previewData?.firstPrompt ?? "");
+      if (agentResponse.error) throw agentResponse.error;
+
       const { error } = await supabase.from("roleplays").insert([
         {
           name,
@@ -105,6 +114,7 @@ export function CreateRoleplayDialog({ onSuccess }: CreateRoleplayDialogProps) {
           code: Math.random().toString(36).substring(2, 8).toUpperCase(),
           first_prompt: previewData?.firstPrompt,
           image_path: previewData?.imagePath,
+          agent_id: agentResponse.agent_id,
         },
       ]);
       if (error) throw error;
@@ -264,7 +274,7 @@ export function CreateRoleplayDialog({ onSuccess }: CreateRoleplayDialogProps) {
                   setName(e.target.value);
                   setHasPreviewed(false);
                 }}
-                placeholder="Enter roleplay name"
+                placeholder="e.g. Ordering at a restaurant"
                 required
               />
             </div>
@@ -290,7 +300,7 @@ export function CreateRoleplayDialog({ onSuccess }: CreateRoleplayDialogProps) {
                   setScenario(e.target.value);
                   setHasPreviewed(false);
                 }}
-                placeholder="Enter the roleplay scenario"
+                placeholder="Enter the roleplay scenario, or auto-generate it."
                 required
                 className="flex-1"
               />

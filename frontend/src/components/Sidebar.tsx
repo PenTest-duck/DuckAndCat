@@ -46,6 +46,10 @@ export function Sidebar({ user }: SidebarProps) {
   const { language, setLanguage, isLoading } = useTeacher();
 
   useEffect(() => {
+    console.log("Language in sidebar:", language);
+  }, [language]);
+
+  useEffect(() => {
     const fetchLanguages = async () => {
       try {
         const supabase = createClient();

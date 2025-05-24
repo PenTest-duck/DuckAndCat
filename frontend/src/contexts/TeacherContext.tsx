@@ -16,36 +16,57 @@ export function TeacherProvider({ children, user }: { children: ReactNode; user:
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log("TeacherProvider useEffect - user:", user?.id);
     if (user) {
       fetchTeacherLanguage();
+    } else {
+      setIsLoading(false);
     }
   }, [user]);
 
   const fetchTeacherLanguage = async () => {
     try {
+      console.log("Fetching teacher language for user:", user?.id);
       const supabase = createClient();
-      const { data, error } = await supabase
+      
+      // First, get the teacher's language_id
+      const { data: teacherData, error: teacherError } = await supabase
         .from("teachers")
-        .select(`
-          languages (
-            id,
-            name,
-            code,
-            levels,
-            created_at
-          )
-        `)
+        .select("language_id")
         .eq("id", user?.id)
         .single();
 
-      if (error) throw error;
-      if (data?.languages && data.languages.length > 0) {
-        // The languages field is an array with a single item due to the join
-        const languageData = data.languages[0] as Language;
+      if (teacherError) {
+        console.error("Error fetching teacher:", teacherError);
+        throw teacherError;
+      }
+
+      if (!teacherData?.language_id) {
+        console.log("No language_id found for teacher");
+        setIsLoading(false);
+        return;
+      }
+
+      // Then, get the language details
+      const { data: languageData, error: languageError } = await supabase
+        .from("languages")
+        .select("*")
+        .eq("id", teacherData.language_id)
+        .single();
+
+      if (languageError) {
+        console.error("Error fetching language:", languageError);
+        throw languageError;
+      }
+
+      if (languageData) {
+        console.log("Setting language state to:", languageData);
         setLanguageState(languageData);
+      } else {
+        console.log("No language data found");
       }
     } catch (error) {
-      console.error("Error fetching teacher language:", error);
+      console.error("Error in fetchTeacherLanguage:", error);
     } finally {
       setIsLoading(false);
     }

@@ -61,6 +61,7 @@ export type Database = {
       }
       roleplays: {
         Row: {
+          agent_id: string | null
           code: string | null
           created_at: string
           first_prompt: string | null
@@ -71,6 +72,7 @@ export type Database = {
           scenario: string
         }
         Insert: {
+          agent_id?: string | null
           code?: string | null
           created_at?: string
           first_prompt?: string | null
@@ -81,6 +83,7 @@ export type Database = {
           scenario: string
         }
         Update: {
+          agent_id?: string | null
           code?: string | null
           created_at?: string
           first_prompt?: string | null

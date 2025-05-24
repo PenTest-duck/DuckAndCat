@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { getStorageUrl } from "@/utils/utils";
+import { useConversation } from "@11labs/react";
+import { Roleplay } from "@/utils/types";
+import Transcript from "@/components/Transcript";
 
-interface Roleplay {
-  id: string;
-  name: string;
-  scenario: string;
-  image_path: string | null;
-  first_prompt: string | null;
+interface Message {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export default function RoleplayPage() {
@@ -23,7 +23,56 @@ export default function RoleplayPage() {
   const [roleplay, setRoleplay] = useState<Roleplay | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+  const [isDialogOpen, setIsDialogOpen] = useState(true);
+  const [isConversationActive, setIsConversationActive] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const conversation = useConversation({
+    onConnect: () => {
+      console.log('Connected');
+      setIsConversationActive(true);
+    },
+    onDisconnect: () => {
+      console.log('Disconnected');
+      setIsConversationActive(false);
+    },
+    onMessage: (message) => {
+      console.log('Message:', message);
+      setMessages(prev => [...prev, {
+        role: message.source === 'ai' ? 'assistant' : 'user',
+        content: message.message
+      }]);
+    },
+    onError: (error) => {
+      console.error('Error:', error);
+      toast.error("An error occurred during the conversation");
+    },
+  });
+
+  const startConversation = useCallback(async () => {
+    if (!roleplay?.agent_id) {
+      toast.error("The roleplay agent could not be found");
+      return;
+    }
+
+    try {
+      // Request microphone permission
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Start the conversation with your agent
+      await conversation.startSession({
+        agentId: roleplay?.agent_id,
+      });
+
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+    }
+  }, [conversation]);
+
+  const stopConversation = useCallback(async () => {
+    await conversation.endSession();
+    setIsConversationActive(false);
+  }, [conversation]);
 
   useEffect(() => {
     fetchRoleplay();
@@ -53,12 +102,13 @@ export default function RoleplayPage() {
     }
   };
 
-  const handleStart = () => {
-    if (roleplay?.first_prompt) {
-      router.push(`/students/roleplay/${code}/chat`);
-    } else {
+  const handleStart = async () => {
+    if (!roleplay?.agent_id) {
       toast.error("This roleplay is not properly configured");
+      return;
     }
+    
+    await startConversation();
   };
 
   if (isLoading) {
@@ -98,20 +148,41 @@ export default function RoleplayPage() {
 
       {/* Centered Dialog */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <Dialog open={true}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          // Only allow closing if conversation is not active
+          if (!isConversationActive) {
+            setIsDialogOpen(open);
+          }
+        }}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold">{roleplay.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-gray-600 whitespace-pre-wrap">{roleplay.scenario}</p>
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={handleStart}
-              >
-                Start Roleplay
-              </Button>
+              {!isConversationActive ? (
+                <>
+                  <p className="text-gray-600 whitespace-pre-wrap">{roleplay.scenario}</p>
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleStart}
+                  >
+                    Start Roleplay
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Transcript messages={messages} />
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    variant="destructive"
+                    onClick={stopConversation}
+                  >
+                    End Roleplay
+                  </Button>
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>

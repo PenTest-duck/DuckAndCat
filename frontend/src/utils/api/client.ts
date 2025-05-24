@@ -38,6 +38,7 @@ export const getRoleplayImage = async (
     );
     return response.json();
 };
+
 export const deleteRoleplayPreviews = async (teacherId: string) => {
     const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/roleplay/deletePreviews?teacher_id=${teacherId}`,
@@ -46,6 +47,25 @@ export const deleteRoleplayPreviews = async (teacherId: string) => {
             headers: {
                 "Content-Type": "application/json",
             },
+        }
+    );
+    return response.json();
+};
+
+export const createRoleplayAgent = async (roleplayName: string, roleplayScenario: string, languageCode: string, firstPrompt: string) => {
+    const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/roleplay/agent`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                roleplay_name: roleplayName,
+                roleplay_scenario: roleplayScenario,
+                language_code: languageCode,
+                first_prompt: firstPrompt,
+            }),
         }
     );
     return response.json();

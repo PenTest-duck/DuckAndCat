@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@11labs/react':
+        specifier: ^0.1.4
+        version: 0.1.4(react@19.1.0)
       '@radix-ui/react-dialog':
         specifier: ^1.1.14
         version: 1.1.14(@types/react-dom@19.1.5(@types/react@19.1.5))(@types/react@19.1.5)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -86,6 +89,14 @@ importers:
         version: 5.8.3
 
 packages:
+
+  '@11labs/client@0.1.4':
+    resolution: {integrity: sha512-XxNl4GpNW9NYOD1P5apzZBpcNOP0Zu4goZu8Lud1iTIVkjv3fDp+hyurZoSTUdsik/TIeuxMgbd392M/EQgoKw==}
+
+  '@11labs/react@0.1.4':
+    resolution: {integrity: sha512-iJ+cRfoj6WNQ9U48Umvhf4yw+LhmLYtkPXiU85Nj74paPQbSNBDTq6kwi7BTu2DtfgqP65T5BEjWhheV2IxogA==}
+    peerDependencies:
+      react: '>=16.8.0'
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -2314,6 +2325,13 @@ packages:
     engines: {node: '>=10'}
 
 snapshots:
+
+  '@11labs/client@0.1.4': {}
+
+  '@11labs/react@0.1.4(react@19.1.0)':
+    dependencies:
+      '@11labs/client': 0.1.4
+      react: 19.1.0
 
   '@alloc/quick-lru@5.2.0': {}
 
