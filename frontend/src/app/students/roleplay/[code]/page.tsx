@@ -49,7 +49,7 @@ export default function RoleplayPage() {
     },
     onDisconnect: () => {
       console.log('Disconnected');
-      // setIsConversationActive(false);
+      setIsConversationActive(false);
     },
     onMessage: (message) => {
       console.log('Message:', message);
@@ -86,7 +86,7 @@ export default function RoleplayPage() {
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
-    // setIsConversationActive(false);
+    setIsConversationActive(false);
   }, [conversation]);
 
   useEffect(() => {
