@@ -35,16 +35,19 @@ export type Database = {
       }
       roleplay_runs: {
         Row: {
+          conversation_id: string | null
           created_at: string
           id: string
           roleplay_id: string
         }
         Insert: {
+          conversation_id?: string | null
           created_at?: string
           id?: string
           roleplay_id?: string
         }
         Update: {
+          conversation_id?: string | null
           created_at?: string
           id?: string
           roleplay_id?: string

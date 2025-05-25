@@ -12,6 +12,7 @@ import {
   Gamepad2,
   MessageSquare,
   Users,
+  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,6 +106,14 @@ export function Sidebar({ user }: SidebarProps) {
         >
           <BookOpen className="h-5 w-5" />
           Roleplays
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2"
+          onClick={() => toast.info("Coming soon!")}
+        >
+          <Headphones className="h-5 w-5" />
+          Listening
         </Button>
         <Button
           variant="ghost"

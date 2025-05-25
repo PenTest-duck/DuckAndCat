@@ -70,3 +70,42 @@ export const createRoleplayAgent = async (roleplayName: string, roleplayScenario
     );
     return response.json();
 };
+
+export const listConversations = async (runId: string) => {
+    const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/roleplay/agent/runs/${runId}/conversations`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }
+    );
+    return response.json();
+};
+
+export const getConversation = async (conversationId: string) => {
+    const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/roleplay/conversations/${conversationId}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }
+    );
+    return response.json();
+};
+
+export const getConversationAudio = async (conversationId: string) => {
+    const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/roleplay/conversations/${conversationId}/audio`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }
+    );
+    return response.blob()
+};

@@ -2,7 +2,8 @@ from io import BytesIO
 from textwrap import dedent
 from typing import Union
 from elevenlabs import AgentConfig, ConversationalConfig, ElevenLabs, Llm, PromptAgentDbModel
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
@@ -14,6 +15,7 @@ import re
 from uuid import uuid4
 from dotenv import load_dotenv
 from logging import getLogger, basicConfig, INFO
+from elevenlabs_client import client as elevenlabs_client
 
 # Configure logging
 basicConfig(
@@ -31,7 +33,6 @@ router = APIRouter(prefix="/api/v1/roleplay", tags=["roleplay"])
 
 googleClient = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 supabaseClient: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
-elevenLabsClient = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
 class RoleplayDescriptionRequest(BaseModel):
     roleplay_name: str
@@ -146,44 +147,15 @@ def create_roleplay_agent(request: RoleplayAgentRequest):
             logger.warning(f"No voice found for language code {request.language_code}. Using default voice.")
             pass
     
-    # Unfortunately ElevenLabs SDK itself is broken at the moment
-    response = requests.post(
-        "https://api.elevenlabs.io/v1/convai/agents/create",
-        headers={
-            "Xi-Api-Key": os.getenv("ELEVENLABS_API_KEY"),
-        },
-        json={
-            "name": request.roleplay_name,
-            "tags": ["roleplay", "base"],
-            "conversation_config": {
-                "agent": {
-                    "first_message": request.first_prompt,
-                    "language": request.language_code.lower(),
-                    "prompt": {
-                        "prompt": dedent(f"""
-You are a roleplay agent for a language learning roleplay.
-The roleplay is about {request.roleplay_name}.
-The scenario is:
-{request.roleplay_scenario}
-                        """),
-                        "llm": "gemini-2.5-flash",
-                        "temperature": 0.3,
-                    },
-                },
-                "tts": {
-                    "model_id": "eleven_flash_v2_5",
-                    "voice_id": voice_id,
-                },
-                "conversation": {
-                    "client_events": ["audio", "interruption", "user_transcript", "agent_response"],
-                }
-            },
-        }
+    agent_id = elevenlabs_client.create_agent(
+        name=request.roleplay_name,
+        first_prompt=request.first_prompt,
+        language_code=request.language_code,
+        roleplay_name=request.roleplay_name,
+        roleplay_scenario=request.roleplay_scenario,
+        voice_id=voice_id
     )
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"Failed to create roleplay agent: {response.json()}")
     
-    agent_id = response.json()["agent_id"]
     return {
         "agent_id": agent_id,
     }
@@ -194,44 +166,31 @@ class RoleplayRunSetupRequest(BaseModel):
 
 @router.post("/agent/runs")
 def setup_roleplay_run(request: RoleplayRunSetupRequest):
-    response = requests.get(
-        f"https://api.elevenlabs.io/v1/convai/agents/{request.agent_id}",
-        headers={
-            "Xi-Api-Key": os.getenv("ELEVENLABS_API_KEY"),
-        },
-    )
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"Failed to get roleplay agent: {response.json()}")
-    original_agent = response.json()
+    original_agent = elevenlabs_client.get_agent(request.agent_id)
+    run_id = elevenlabs_client.create_agent_run(original_agent, request.speed)
     
-    # Edit the agent for this run
-    original_agent["name"] = f"{original_agent['name']} (Run)"
-    original_agent["tags"] = ["roleplay", "run"]
-    original_agent["conversation_config"]["agent"]["speed"] = request.speed
-
-    response = requests.post(
-        "https://api.elevenlabs.io/v1/convai/agents/create",
-        headers={
-            "Xi-Api-Key": os.getenv("ELEVENLABS_API_KEY"),
-        },
-        json=original_agent,
-    )
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"Failed to create roleplay agent run: {response.json()}")
-    
-    run_id = response.json()["agent_id"]
     return {
         "run_id": run_id,
     }
 
 @router.delete("/agent/runs/{run_id}")
 def teardown_roleplay_run(run_id: str):
-    response = requests.delete(
-        f"https://api.elevenlabs.io/v1/convai/agents/{run_id}",
-        headers={
-            "Xi-Api-Key": os.getenv("ELEVENLABS_API_KEY"),
-        },
-    )
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"Failed to delete roleplay agent run: {response.json()}")
+    elevenlabs_client.delete_agent(run_id)
     return {"message": "Roleplay agent run deleted successfully"}
+
+@router.get("/agent/runs/{run_id}/conversations")
+def list_conversations(run_id: str):
+    return elevenlabs_client.list_conversations(run_id)
+
+@router.get("/conversations/{conversation_id}")
+def get_conversation(conversation_id: str):
+    return elevenlabs_client.get_conversation(conversation_id)
+
+@router.get("/conversations/{conversation_id}/audio")
+def get_conversation_audio(conversation_id: str):
+    audio_data = elevenlabs_client.get_conversation_audio(conversation_id)
+    return StreamingResponse(
+        BytesIO(audio_data),
+        media_type="audio/mpeg",
+        headers={"Content-Disposition": f"attachment; filename=conversation_{conversation_id}.mp3"}
+    )

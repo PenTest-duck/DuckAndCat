@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Copy } from "lucide-react";
+import { ExternalLink, Copy, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ConversationList } from "./ConversationList";
 
 interface RoleplayCardProps {
   roleplay: Roleplay;
@@ -19,6 +20,7 @@ interface RoleplayCardProps {
 
 export function RoleplayCard({ roleplay }: RoleplayCardProps) {
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [isConversationListOpen, setIsConversationListOpen] = useState(false);
 
   useEffect(() => {
     const loadImage = async () => {
@@ -84,12 +86,34 @@ export function RoleplayCard({ roleplay }: RoleplayCardProps) {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <TooltipProvider delayDuration={0.5}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    onClick={() => setIsConversationListOpen(true)}
+                    className="h-8 w-8 -ml-1 flex items-center justify-center cursor-pointer text-gray-500 hover:text-gray-700"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View Conversations</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <span className="text-xs text-gray-500">
             {new Date(roleplay.created_at).toLocaleDateString()}
           </span>
         </div>
       </CardContent>
+      {roleplay.agent_id && (
+        <ConversationList
+          runId={roleplay.agent_id}
+          isOpen={isConversationListOpen}
+          onClose={() => setIsConversationListOpen(false)}
+        />
+      )}
     </Card>
   );
 }
