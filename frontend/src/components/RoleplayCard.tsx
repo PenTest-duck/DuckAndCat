@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ConversationList } from "./ConversationList";
+import { formatAdjustedDate } from "@/utils/date";
 
 interface RoleplayCardProps {
   roleplay: Roleplay;
@@ -103,7 +104,11 @@ export function RoleplayCard({ roleplay }: RoleplayCardProps) {
             </TooltipProvider>
           </div>
           <span className="text-xs text-gray-500">
-            {new Date(roleplay.created_at).toLocaleDateString()}
+            {formatAdjustedDate(roleplay.created_at, { 
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
           </span>
         </div>
       </CardContent>

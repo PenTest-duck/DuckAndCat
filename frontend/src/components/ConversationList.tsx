@@ -13,6 +13,7 @@ import {
   getConversationAudio,
 } from "@/utils/api/client";
 import { toast } from "sonner";
+import { formatAdjustedDate } from "@/utils/date";
 
 interface Conversation {
     conversation_id: string;
@@ -111,7 +112,7 @@ export function ConversationList({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    return formatAdjustedDate(dateString);
   };
 
   if (isLoading) {

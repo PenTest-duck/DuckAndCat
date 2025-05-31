@@ -2,6 +2,7 @@ import { User } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { formatAdjustedDate } from "@/utils/date";
 
 interface Message {
   role: "user" | "assistant";
@@ -26,8 +27,8 @@ export default function Transcript({ messages, isVisible, onVisibilityChange }: 
   }, [messages]);
 
   const formatTime = () => {
-    return new Date().toLocaleTimeString([], { 
-      hour: '2-digit', 
+    return formatAdjustedDate(new Date(), {
+      hour: '2-digit',
       minute: '2-digit'
     });
   };

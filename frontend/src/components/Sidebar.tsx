@@ -110,18 +110,18 @@ export function Sidebar({ user }: SidebarProps) {
         <Button
           variant="ghost"
           className="w-full justify-start gap-2"
-          onClick={() => toast.info("Coming soon!")}
+          onClick={() => router.push("/vocabulary")}
         >
-          <Headphones className="h-5 w-5" />
-          Listening
+          <BookText className="h-5 w-5" />
+          Vocabulary
         </Button>
         <Button
           variant="ghost"
           className="w-full justify-start gap-2"
           onClick={() => toast.info("Coming soon!")}
         >
-          <BookText className="h-5 w-5" />
-          Vocabulary
+          <Headphones className="h-5 w-5" />
+          Listening
         </Button>
         <Button
           variant="ghost"
